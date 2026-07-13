@@ -1,15 +1,13 @@
-# Virtual Environment
 venv/
-
-# Python cache files
-__pycache__/
-*.pyc
-
-# Environment variables
+.venv/
+env/
 .env
 
-# VS Code settings
-.vscode/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
 
-# JetBrains IDE settings
+.DS_Store
+.vscode/
 .idea/
