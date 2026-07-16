@@ -15,6 +15,7 @@ no database — just proves the request -> service -> response flow works.
 import logging
 from app.schemas.verify import VerifyResponse, VerificationBreakdown
 from app.services.text_classifier import TextClassifier
+from app.services.image_verification_service import ImageVerificationService
 
 logger = logging.getLogger(__name__)
 
@@ -26,94 +27,30 @@ THRESHOLD_SUSPICIOUS = 0.40
 text_classifier = TextClassifier()
 
 
-def verify_post(post_text: str | None, post_url: str | None = None) -> VerifyResponse:
+def verify_post(
+    post_text: str | None,
+    post_url: str | None = None,
+    image_bytes: bytes | None = None,
+    image_filename: str | None = None,
+) -> VerifyResponse:
     """
-    Verifies the authenticity of a social media post using a text classification AI model.
+    Verifies the authenticity of a social media post using text classification and image metadata forensic checks.
 
     Args:
         post_text: The text content submitted for verification.
-        post_url: Optional source URL, currently unused.
+        post_url: Optional source URL.
+        image_bytes: Raw binary content of the uploaded image.
+        image_filename: Filename of the uploaded image.
 
     Returns:
-        A VerifyResponse containing the verdict, confidence score, sub-scores, and an explanation.
+        A VerifyResponse containing the verdict, confidence score, sub-scores, metadata analysis, and warnings.
     """
-    # 1. Gracefully handle empty, missing, or whitespace-only text
-    if not post_text or not post_text.strip():
-        logger.info("Empty or missing post text received. Defaulting to neutral/suspicious verdict.")
-        neutral_score = 0.50
-        return VerifyResponse(
-            verdict="Suspicious",
-            confidence_score=neutral_score,
-            breakdown=VerificationBreakdown(
-                text_authenticity_score=neutral_score,
-                image_authenticity_score=0.50,  # Placeholder image score
-            ),
-            message="No text content was provided for analysis. Verification is inconclusive.",
-        )
+    # 1. Gracefully handle completely empty request (neither text nor image)
+    has_text = bool(post_text and post_text.strip())
+    has_image = bool(image_bytes is not None)
 
-    try:
-        # 2. Run text classification using the singleton AI model
-        classification = text_classifier.classify(post_text)
-        raw_label = classification["label"]
-        raw_confidence = classification["score"]
-
-        logger.info(f"Text classifier result - raw label: '{raw_label}', confidence: {raw_confidence:.4f}")
-
-        # 3. Normalize prediction label to 'Real' or 'Fake'
-        label_clean = str(raw_label).strip().lower()
-        if label_clean in ("real", "label_0", "true", "authentic") or label_clean.startswith("label_0"):
-            # Model predicts it is Real (authentic). The text authenticity score is the confidence score itself.
-            text_score = round(raw_confidence, 2)
-            model_verdict_type = "Authentic"
-        elif label_clean in ("fake", "label_1", "false", "misinformation", "suspicious") or label_clean.startswith("label_1"):
-            # Model predicts it is Fake (misinformation). Text authenticity score is the inverse (1 - confidence).
-            text_score = round(1.0 - raw_confidence, 2)
-            model_verdict_type = "Fake"
-        else:
-            # Fallback if label is unrecognized
-            logger.warning(f"Unrecognized prediction label: '{raw_label}'. Falling back to neutral score.")
-            text_score = 0.50
-            model_verdict_type = "Unknown"
-
-        # 4. Image score remains a placeholder in this phase
-        image_score = 0.50
-
-        # 5. Compute overall authenticity score (for now, simple average between text and placeholder image)
-        confidence = round((text_score + image_score) / 2, 2)
-
-        # 6. Map the text authenticity score to the appropriate verdict
-        if text_score >= THRESHOLD_AUTHENTIC:
-            verdict = "Authentic"
-            explanation = (
-                f"The text content appears authentic (credibility score: {text_score:.2f}). "
-                f"Model predicted '{model_verdict_type}' with {raw_confidence * 100:.1f}% confidence."
-            )
-        elif text_score >= THRESHOLD_SUSPICIOUS:
-            verdict = "Suspicious"
-            explanation = (
-                f"The text content is suspicious or contains unverified claims (credibility score: {text_score:.2f}). "
-                f"Model confidence is mixed or close to neutral."
-            )
-        else:
-            verdict = "Likely Misinformation"
-            explanation = (
-                f"The text content has been flagged as likely misinformation (credibility score: {text_score:.2f}). "
-                f"Model predicted '{model_verdict_type}' with {raw_confidence * 100:.1f}% confidence."
-            )
-
-        return VerifyResponse(
-            verdict=verdict,
-            confidence_score=confidence,
-            breakdown=VerificationBreakdown(
-                text_authenticity_score=text_score,
-                image_authenticity_score=image_score,
-            ),
-            message=explanation,
-        )
-
-    except Exception as e:
-        logger.error(f"Error executing text verification service: {e}", exc_info=True)
-        # Graceful fallback so API doesn't return 500 on model failures
+    if not has_text and not has_image:
+        logger.info("Empty request received. Defaulting to neutral/suspicious verdict.")
         return VerifyResponse(
             verdict="Suspicious",
             confidence_score=0.50,
@@ -121,5 +58,107 @@ def verify_post(post_text: str | None, post_url: str | None = None) -> VerifyRes
                 text_authenticity_score=0.50,
                 image_authenticity_score=0.50,
             ),
-            message=f"Verification failed due to an internal system error: {str(e)}",
+            text_score=0.50,
+            image_score=0.50,
+            metadata_analysis=None,
+            warnings=["No text or image content was provided for analysis."],
+            message="No content was provided for analysis. Verification is inconclusive.",
         )
+
+    text_score = 0.50
+    model_verdict_type = "N/A"
+    raw_confidence = 0.0
+    warnings = []
+
+    # 2. Run Text Classification if text is present
+    if has_text:
+        try:
+            classification = text_classifier.classify(post_text)  # type: ignore
+            raw_label = classification["label"]
+            raw_confidence = classification["score"]
+
+            logger.info(f"Text classifier result - raw label: '{raw_label}', confidence: {raw_confidence:.4f}")
+
+            # Normalize prediction label to 'Real' or 'Fake'
+            label_clean = str(raw_label).strip().lower()
+            if label_clean in ("real", "label_0", "true", "authentic") or label_clean.startswith("label_0"):
+                text_score = round(raw_confidence, 2)
+                model_verdict_type = "Authentic"
+            elif label_clean in ("fake", "label_1", "false", "misinformation", "suspicious") or label_clean.startswith("label_1"):
+                text_score = round(1.0 - raw_confidence, 2)
+                model_verdict_type = "Fake"
+            else:
+                logger.warning(f"Unrecognized prediction label: '{raw_label}'. Falling back to neutral score.")
+                text_score = 0.50
+                model_verdict_type = "Unknown"
+        except Exception as e:
+            logger.error(f"Text classification service failed internally: {e}", exc_info=True)
+            text_score = 0.50
+            warnings.append(f"Text analysis encountered a system error: {str(e)}")
+
+    # 3. Run Image Verification if image is present
+    image_score = 0.50
+    metadata_analysis = None
+    if has_image:
+        try:
+            # Let ValueError (corrupt or invalid files) bubble up to the route handler
+            image_service = ImageVerificationService()
+            image_result = image_service.verify_image(image_bytes, image_filename or "uploaded_image.jpg")  # type: ignore
+            image_score = image_result["image_score"]
+            metadata_analysis = image_result["metadata"]
+            warnings.extend(image_result["warnings"])
+        except ValueError as e:
+            logger.error(f"Image validation failed: {e}")
+            raise e
+        except Exception as e:
+            logger.error(f"Image verification service failed internally: {e}", exc_info=True)
+            image_score = 0.50
+            warnings.append(f"Image analysis encountered a system error: {str(e)}")
+
+    # 4. Compute overall confidence score and combine text/image signals
+    if has_text and has_image:
+        # Both text and image present: Weighted average (60% text, 40% image)
+        confidence = round(0.60 * text_score + 0.40 * image_score, 2)
+    elif has_text:
+        # Only text present
+        confidence = text_score
+    else:
+        # Only image present
+        confidence = image_score
+
+    # 5. Map overall confidence to verdict
+    if confidence >= THRESHOLD_AUTHENTIC:
+        verdict = "Authentic"
+    elif confidence >= THRESHOLD_SUSPICIOUS:
+        verdict = "Suspicious"
+    else:
+        verdict = "Likely Misinformation"
+
+    # 6. Generate detailed explanation message
+    explanations = []
+    if has_text:
+        explanations.append(
+            f"Text content score is {text_score:.2f} (model predicted '{model_verdict_type}' with {raw_confidence * 100:.1f}% confidence)."
+        )
+    if has_image:
+        explanations.append(
+            f"Image authenticity score is {image_score:.2f} based on metadata and reverse search checks."
+        )
+        if warnings:
+            explanations.append(f"Forensic check flagged {len(warnings)} warning(s).")
+    
+    explanation_message = " ".join(explanations)
+
+    return VerifyResponse(
+        verdict=verdict,
+        confidence_score=confidence,
+        breakdown=VerificationBreakdown(
+            text_authenticity_score=text_score,
+            image_authenticity_score=image_score,
+        ),
+        text_score=text_score,
+        image_score=image_score,
+        metadata_analysis=metadata_analysis,
+        warnings=warnings,
+        message=explanation_message,
+    )

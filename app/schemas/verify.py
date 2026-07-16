@@ -11,7 +11,7 @@ At this stage there is no AI model behind these — VerifyResponse is filled
 with dummy/placeholder values by the route handler.
 """
 
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
 
@@ -61,9 +61,26 @@ class VerifyResponse(BaseModel):
         examples=["True", "Suspicious", "False"],
     )
     confidence_score: float = Field(
-        description="0-1 overall confidence in the verdict (placeholder)."
+        description="0-1 overall confidence in the verdict."
     )
     breakdown: VerificationBreakdown
+    text_score: Optional[float] = Field(
+        default=None,
+        description="0-1 score representing text authenticity likelihood."
+    )
+    image_score: Optional[float] = Field(
+        default=None,
+        description="0-1 score representing image authenticity likelihood."
+    )
+    metadata_analysis: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Extracted and analyzed image metadata."
+    )
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="List of forensic warnings triggered during verification."
+    )
     message: str = Field(
         description="Human-readable explanation of the result.",
     )
+
