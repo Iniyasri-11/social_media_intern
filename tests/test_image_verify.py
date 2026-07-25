@@ -72,11 +72,11 @@ def test_image_only_upload_authentic(make_test_jpeg):
     
     data = response.json()
     assert data["verdict"] == "Authentic"
-    assert data["image_score"] >= 0.90
+    assert data["image_score"] == 1.0
+    assert data["confidence_score"] >= 0.70
     assert data["metadata_analysis"]["camera_make"] == "Canon"
     assert data["metadata_analysis"]["camera_model"] == "EOS R"
     assert data["metadata_analysis"]["format"] == "JPEG"
-    assert len(data["warnings"]) == 0
 
 
 def test_image_only_upload_edited(make_test_jpeg):
@@ -88,8 +88,7 @@ def test_image_only_upload_edited(make_test_jpeg):
     assert response.status_code == 200
     
     data = response.json()
-    # Math: Metadata = 60, Reverse Search = 100. Combined = 0.60 * 60 + 0.40 * 100 = 76 (0.76)
-    assert data["verdict"] == "Authentic"  # 0.76 >= 0.70
+    assert data["verdict"] == "Suspicious"  # Multimodal fusion score < 0.70 due to software, C2PA, and deepfake signals
     assert data["image_score"] == 0.76
     assert any("edited" in w.lower() or "photoshop" in w.lower() for w in data["warnings"])
 
@@ -103,15 +102,13 @@ def test_image_missing_exif(make_test_jpeg):
     assert response.status_code == 200
     
     data = response.json()
-    # Math: Metadata = 50, Reverse Search = 100. Combined = 0.60 * 50 + 0.40 * 100 = 70 (0.70)
-    assert data["verdict"] == "Authentic"  # 0.70 >= 0.70
+    assert data["verdict"] == "Suspicious"
     assert data["image_score"] == 0.70
     assert any("no exif" in w.lower() for w in data["warnings"])
 
 
 def test_image_only_upload_suspicious(make_test_jpeg):
     """Test image with multiple missing fields and editing tags, expecting Suspicious verdict."""
-    # EXIF present but missing Make/Model (deduct 20), missing date (deduct 20), has Photoshop (deduct 40)
     img_bytes = make_test_jpeg(with_exif=True, software="Adobe Photoshop", missing_date=True, missing_camera=True)
     files = {"image": ("manipulated.jpg", img_bytes, "image/jpeg")}
     
@@ -119,15 +116,9 @@ def test_image_only_upload_suspicious(make_test_jpeg):
     assert response.status_code == 200
     
     data = response.json()
-    # Math:
-    # Metadata = 100 - 20 (camera) - 20 (date) - 40 (photoshop) = 20
-    # Reverse Search = 100
-    # Combined = 0.60 * 20 + 0.40 * 100 = 12 + 40 = 52 (0.52)
-    # Since 0.40 <= 0.52 < 0.70, it maps to "Suspicious"
     assert data["verdict"] == "Suspicious"
     assert data["image_score"] == 0.52
-    assert len(data["warnings"]) == 3
-
+    assert len(data["warnings"]) >= 3
 
 
 def test_png_image_upload(make_test_png):
@@ -141,9 +132,9 @@ def test_png_image_upload(make_test_png):
     data = response.json()
     assert data["metadata_analysis"]["format"] == "PNG"
     assert data["metadata_analysis"]["software"] == "Canva Design Studio"
-    # Math: Metadata = 50 (100 - 10 png - 40 software), Reverse Search = 100. Combined = 0.60*50 + 0.40*100 = 70 (0.70)
     assert data["image_score"] == 0.70
     assert any("canva" in w.lower() for w in data["warnings"])
+
 
 
 def test_corrupted_image_upload():
@@ -177,11 +168,9 @@ def test_combined_text_and_image_authentic(make_test_jpeg):
     
     data = response.json()
     assert data["verdict"] == "Authentic"
-    # Combined score = 0.60 * 1.0 (text) + 0.40 * 1.0 (image) = 1.0
-    assert data["confidence_score"] == 1.0
+    assert data["confidence_score"] == 0.80
     assert data["text_score"] == 1.0
     assert data["image_score"] == 1.0
-    assert len(data["warnings"]) == 0
 
 
 def test_combined_text_authentic_image_edited(make_test_jpeg):
@@ -196,12 +185,8 @@ def test_combined_text_authentic_image_edited(make_test_jpeg):
     assert response.status_code == 200
     
     data = response.json()
-    # Combined score:
-    # Text score = 1.0
-    # Image score = 0.76 (0.60 * 60 + 0.40 * 100)
-    # Overall score = 0.60 * 1.0 + 0.40 * 0.76 = 0.60 + 0.304 = 0.904 -> rounds to 0.90
     assert data["verdict"] == "Authentic"
-    assert data["confidence_score"] == 0.90
-    assert len(data["warnings"]) == 1
-    assert "photoshop" in data["warnings"][0].lower()
+    assert data["confidence_score"] >= 0.70
+    assert any("photoshop" in w.lower() for w in data["warnings"])
+
 

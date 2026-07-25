@@ -9,7 +9,11 @@ httpx>=0.27.0
 # --- AI & NLP ---
 torch
 transformers
+torchvision
 
 # --- Image Analysis ---
 Pillow
 python-multipart
+
+# --- Database & Storage ---
+sqlalchemy
