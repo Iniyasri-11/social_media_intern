@@ -7,11 +7,13 @@ lets each feature area (verify, and later e.g. auth, history, admin) live
 in its own router module that main.py simply includes.
 """
 
-from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, Depends
 from typing import Optional
+from sqlalchemy.orm import Session
 
 from app.schemas.verify import VerifyResponse
 from app.services.verification_service import verify_post
+from app.db.database import get_db
 
 # prefix/tags here keep Swagger UI organized and give all routes in this
 # file a consistent base path (e.g. this could become /api/v1/verify later)
@@ -37,6 +39,7 @@ async def verify(
     post_text: Optional[str] = Form(None),
     post_url: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
 ) -> VerifyResponse:
     """
     Route handler that processes either a JSON payload or a multipart form-data upload.
@@ -90,6 +93,7 @@ async def verify(
             post_url=resolved_url,
             image_bytes=image_bytes,
             image_filename=image_filename,
+            db=db,
         )
     except ValueError as e:
         # Catch and map image format corruption or validation errors to HTTP 400
@@ -99,4 +103,5 @@ async def verify(
             status_code=500,
             detail=f"An unexpected internal error occurred: {str(e)}",
         )
+
 

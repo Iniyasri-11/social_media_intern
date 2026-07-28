@@ -76,6 +76,22 @@ class VerifyResponse(BaseModel):
         default=None,
         description="Extracted and analyzed image metadata."
     )
+    sha256_hash: Optional[str] = Field(
+        default=None,
+        description="SHA-256 cryptographic fingerprint of uploaded image."
+    )
+    c2pa_provenance: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="C2PA digital signature and content credential analysis."
+    )
+    deepfake_analysis: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="PyTorch / Hugging Face ML Deepfake Vision detector result."
+    )
+    audit_record_id: Optional[int] = Field(
+        default=None,
+        description="Database audit log record ID."
+    )
     warnings: List[str] = Field(
         default_factory=list,
         description="List of forensic warnings triggered during verification."
@@ -83,4 +99,5 @@ class VerifyResponse(BaseModel):
     message: str = Field(
         description="Human-readable explanation of the result.",
     )
+
 
