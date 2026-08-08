@@ -17,3 +17,5 @@ python-multipart
 
 # --- Database & Storage ---
 sqlalchemy
+supabase>=2.0.0
+passlib[bcrypt]>=1.7.4
