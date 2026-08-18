@@ -651,12 +651,71 @@ code { font-family: 'JetBrains Mono', monospace; }
 .btn-follow:hover { background: var(--surface-hover); }
 .btn-follow.following { background: var(--bg-subtle); color: var(--text-muted); }
 
+.more-menu-container {
+  position: relative;
+}
+
 .btn-post-more {
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-post-more:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.post-options-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 170px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 100;
+  animation: fadeInToast 0.15s ease;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.dropdown-item:hover {
+  background: var(--surface-hover);
+}
+
+.dropdown-item.item-delete {
+  color: var(--accent-red);
+}
+
+.dropdown-item.item-delete:hover {
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .post-media-container {
@@ -1042,6 +1101,12 @@ code { font-family: 'JetBrains Mono', monospace; }
   align-items: center;
   gap: 0.35rem;
   cursor: pointer;
+  position: relative;
+}
+
+.highlight-ring-wrap {
+  position: relative;
+  display: inline-block;
 }
 
 .highlight-ring {
@@ -1053,6 +1118,35 @@ code { font-family: 'JetBrains Mono', monospace; }
   display: grid;
   place-items: center;
   background: var(--surface);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.highlight-item:hover .highlight-ring {
+  border-color: var(--accent-indigo);
+  transform: scale(1.04);
+}
+
+.btn-delete-highlight {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  color: #fff;
+  border: 2px solid var(--surface);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.btn-delete-highlight:hover {
+  transform: scale(1.2);
+  background: #dc2626;
 }
 
 .highlight-avatar {

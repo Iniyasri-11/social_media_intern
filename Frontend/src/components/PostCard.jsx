@@ -52,12 +52,11 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
     setNewComment('');
   };
 
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
-      deleteUserPost(post.id);
-      if (onDeletePost) onDeletePost(post.id);
-      setShowMoreMenu(false);
-    }
+  const handleDelete = (e) => {
+    e?.stopPropagation();
+    deleteUserPost(post.id);
+    if (onDeletePost) onDeletePost(post.id);
+    setShowMoreMenu(false);
   };
 
   const handleAddToStory = () => {
@@ -132,17 +131,16 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
               <button
                 className="btn-post-more"
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
+                title="Post options"
               >
                 <MoreHorizontal size={18} />
               </button>
               
               {showMoreMenu && (
                 <div className="post-options-dropdown">
-                  {isOwnPost && (
-                    <button className="dropdown-item item-delete" onClick={handleDelete}>
-                      <Trash2 size={16} /> Delete Post
-                    </button>
-                  )}
+                  <button className="dropdown-item item-delete" onClick={handleDelete}>
+                    <Trash2 size={16} /> Delete Post
+                  </button>
                   <button className="dropdown-item" onClick={handleAddToStory}>
                     <PlusSquare size={16} /> Add to Story
                   </button>

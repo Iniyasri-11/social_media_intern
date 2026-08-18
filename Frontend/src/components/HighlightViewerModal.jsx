@@ -3,7 +3,7 @@ import { X, ShieldCheck, Heart, Trash2, ChevronLeft, ChevronRight, Play, Pause, 
 import { useProfile } from '../ProfileContext';
 
 export default function HighlightViewerModal({ highlight, onClose, onDeleteHighlight }) {
-  const { profile } = useProfile();
+  const { profile, deleteHighlight } = useProfile();
   const items = highlight?.items && highlight.items.length > 0
     ? highlight.items
     : [
@@ -53,11 +53,11 @@ export default function HighlightViewerModal({ highlight, onClose, onDeleteHighl
     }
   };
 
-  const handleDelete = () => {
-    if (window.confirm(`Delete the "${highlight.title}" highlight from your profile?`)) {
-      if (onDeleteHighlight) onDeleteHighlight(highlight.id);
-      onClose();
-    }
+  const handleDelete = (e) => {
+    e?.stopPropagation();
+    if (onDeleteHighlight) onDeleteHighlight(highlight.id);
+    deleteHighlight(highlight.id);
+    onClose();
   };
 
   return (

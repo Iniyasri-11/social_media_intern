@@ -376,15 +376,36 @@ export function ProfileProvider({ children }) {
   };
 
   const deleteUserPost = (postId) => {
-    setUserPosts(prev => prev.filter(p => p.id !== postId));
+    setUserPosts(prev => {
+      const updated = prev.filter(p => p.id !== postId);
+      try {
+        const key = getStorageKey('trustgram_user_posts', profile.username);
+        localStorage.setItem(key, JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
   };
 
   const addHighlight = (newHl) => {
-    setHighlights(prev => [...prev, newHl]);
+    setHighlights(prev => {
+      const updated = [...prev, newHl];
+      try {
+        const key = getStorageKey('trustgram_highlights', profile.username);
+        localStorage.setItem(key, JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
   };
 
   const deleteHighlight = (hlId) => {
-    setHighlights(prev => prev.filter(h => h.id !== hlId));
+    setHighlights(prev => {
+      const updated = prev.filter(h => h.id !== hlId);
+      try {
+        const key = getStorageKey('trustgram_highlights', profile.username);
+        localStorage.setItem(key, JSON.stringify(updated));
+      } catch (_) {}
+      return updated;
+    });
   };
 
   const addStoryToHighlight = (highlightId, item) => {

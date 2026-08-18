@@ -272,6 +272,7 @@ export default function LandingFeedPage() {
                 post={post}
                 user={profile}
                 onAuditClick={setAuditTargetPost}
+                onDeletePost={(postId) => setPosts(prev => prev.filter(p => p.id !== postId))}
               />
             ))
           ) : (
