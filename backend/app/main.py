@@ -21,6 +21,7 @@ os.environ.setdefault("PYTHONHTTPSVERIFY", "0")
 ssl._create_default_https_context = ssl._create_unverified_context  # noqa: SLF001
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.auth_bridge import router as auth_bridge_router
 from app.routes.verify import router as verify_router
@@ -47,6 +48,17 @@ app = FastAPI(
     title=APP_TITLE,
     description=APP_DESCRIPTION,
     version=APP_VERSION,
+)
+
+# ---------------------------------------------------------------------------
+# CORS Middleware
+# ---------------------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ---------------------------------------------------------------------------

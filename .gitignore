@@ -1,15 +1,23 @@
+# Python
 venv/
 .venv/
 env/
 .env
-
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
 
+# IDE & OS
 .DS_Store
 .vscode/
 .idea/
 data/
 
+# Node & Build artifacts
+node_modules/
+dist/
+.vite/
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.vite/

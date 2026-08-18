@@ -1,40 +1,49 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './AuthContext'
-import LoginPage    from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
-import PostCheckPage from './pages/PostCheckPage'
-
-/** Wraps protected routes — redirects to /login when unauthenticated */
-function PrivateRoute({ children }) {
-  const { isAuth } = useAuth()
-  return isAuth ? children : <Navigate to="/login" replace />
-}
-
-/** Redirects already-logged-in users away from auth pages */
-function PublicRoute({ children }) {
-  const { isAuth } = useAuth()
-  return isAuth ? <Navigate to="/post" replace /> : children
-}
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './AuthContext';
+import { ThemeProvider } from './ThemeContext';
+import { ProfileProvider } from './ProfileContext';
+import LandingFeedPage from './pages/LandingFeedPage';
+import ProfilePage from './pages/ProfilePage';
+import ExplorePage from './pages/ExplorePage';
+import ReelsPage from './pages/ReelsPage';
+import PostCheckPage from './pages/PostCheckPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Root → login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <ProfileProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Instagram-Style Home Feed */}
+              <Route path="/" element={<LandingFeedPage />} />
+              <Route path="/feed" element={<LandingFeedPage />} />
 
-          {/* Public auth routes */}
-          <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+              {/* Instagram Explore Grid */}
+              <Route path="/explore" element={<ExplorePage />} />
 
-          {/* Protected app route */}
-          <Route path="/post" element={<PrivateRoute><PostCheckPage /></PrivateRoute>} />
+              {/* Instagram Reels Experience */}
+              <Route path="/reels" element={<ReelsPage />} />
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
-  )
+              {/* Instagram User Profile Management */}
+              <Route path="/profile" element={<ProfilePage />} />
+
+              {/* Neural Authenticity Verification Lab */}
+              <Route path="/verify" element={<PostCheckPage />} />
+              <Route path="/post" element={<PostCheckPage />} />
+
+              {/* Auth */}
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </ProfileProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }
