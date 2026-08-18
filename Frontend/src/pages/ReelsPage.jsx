@@ -15,6 +15,7 @@ import {
   VolumeX,
   Sparkles,
   Check,
+  PlusSquare,
 } from 'lucide-react';
 
 const REELS_DATA = [
@@ -53,7 +54,7 @@ const REELS_DATA = [
 ];
 
 export default function ReelsPage() {
-  const { profile, addUserPost, followUser, unfollowUser } = useProfile();
+  const { profile, addUserPost, toggleFollow, getFollowStatus, addMyStory } = useProfile();
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [likesMap, setLikesMap] = useState({});
   const [savedMap, setSavedMap] = useState({});
@@ -61,11 +62,24 @@ export default function ReelsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [auditTargetPost, setAuditTargetPost] = useState(null);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [storyToast, setStoryToast] = useState('');
 
   const activeReel = REELS_DATA[currentReelIndex];
+  const followStatus = getFollowStatus(activeReel?.author?.username);
 
   const handleToggleLike = (id) => {
     setLikesMap(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleAddReelToStory = () => {
+    addMyStory({
+      media: activeReel.videoPoster,
+      type: 'reel',
+      caption: activeReel.caption || 'Reel Highlight 🎬',
+      verdict: activeReel.verdict || 'Authentic',
+    });
+    setStoryToast('Reel added to your stories & highlights!');
+    setTimeout(() => setStoryToast(''), 2500);
   };
 
   const handleShare = () => {
@@ -110,10 +124,16 @@ export default function ReelsPage() {
                 <span className="reel-username">@{activeReel.author.username}</span>
                 {activeReel.author.verified && <ShieldCheck size={14} className="text-green" />}
                 <button
-                  className="btn-follow-reel"
-                  onClick={() => followUser(activeReel.author)}
+                  className={`btn-follow-reel ${
+                    followStatus === 'requested'
+                      ? 'btn-requested-pill'
+                      : followStatus === 'following'
+                      ? 'btn-is-following'
+                      : ''
+                  }`}
+                  onClick={() => toggleFollow(activeReel.author)}
                 >
-                  Follow
+                  {followStatus === 'requested' ? 'Requested' : followStatus === 'following' ? 'Following' : 'Follow'}
                 </button>
               </div>
 
@@ -147,6 +167,15 @@ export default function ReelsPage() {
             </button>
 
             <button
+              className="btn-reel-action"
+              onClick={handleAddReelToStory}
+              title="Add Reel to Story / Highlights"
+            >
+              <PlusSquare size={26} className="text-yellow" />
+              <span>Story</span>
+            </button>
+
+            <button
               className={`btn-reel-action ${isBookmarked ? 'action-bookmarked' : ''}`}
               onClick={() => setSavedMap(prev => ({ ...prev, [activeReel.id]: !prev[activeReel.id] }))}
             >
@@ -164,6 +193,12 @@ export default function ReelsPage() {
             </div>
           </div>
         </div>
+
+        {storyToast && (
+          <div className="followers-toast-notice" style={{ marginTop: '0.75rem' }}>
+            <Check size={14} className="text-green" /> {storyToast}
+          </div>
+        )}
 
         {/* Next / Previous Reels Controls */}
         <div className="reels-nav-controls">

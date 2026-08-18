@@ -24,13 +24,20 @@ export default function AddStoryModal({ onClose }) {
   const { profile, addMyStory } = useProfile();
   const [media, setMedia] = useState(null);
   const [caption, setCaption] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setMedia(URL.createObjectURL(file));
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setMedia(event.target.result);
+      setIsProcessing(false);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = (e) => {
@@ -39,6 +46,7 @@ export default function AddStoryModal({ onClose }) {
     addMyStory({
       media,
       caption: caption.trim() || 'Verified story moment 🛡️',
+      verdict: 'Authentic 99%',
     });
     onClose();
   };
@@ -80,7 +88,9 @@ export default function AddStoryModal({ onClose }) {
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload size={32} className="text-indigo" />
-              <p className="dropzone-main-text">Upload a photo for your story</p>
+              <p className="dropzone-main-text">
+                {isProcessing ? 'Processing photo…' : 'Upload a photo for your story'}
+              </p>
               <span className="dropzone-sub-text">Tap to browse files</span>
               <input
                 ref={fileInputRef}
@@ -132,7 +142,7 @@ export default function AddStoryModal({ onClose }) {
             <button
               type="submit"
               className="btn-primary"
-              disabled={!media}
+              disabled={!media || isProcessing}
             >
               <Sparkles size={16} /> Share to Story
             </button>

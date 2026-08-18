@@ -138,7 +138,7 @@ const INITIAL_FEED_POSTS = [
 export default function LandingFeedPage() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { profile, addUserPost, followUser, unfollowUser } = useProfile();
+  const { profile, addUserPost, toggleFollow, getFollowStatus } = useProfile();
   const navigate = useNavigate();
 
   const [posts, setPosts] = useState(INITIAL_FEED_POSTS);
@@ -150,18 +150,6 @@ export default function LandingFeedPage() {
   const handlePostCreated = (newPost) => {
     setPosts(prev => [newPost, ...prev]);
     addUserPost(newPost);
-  };
-
-  const isFollowing = (username) => {
-    return profile.followingList.some(u => u.username === username);
-  };
-
-  const handleToggleFollow = (creator) => {
-    if (isFollowing(creator.username)) {
-      unfollowUser(creator.username);
-    } else {
-      followUser(creator);
-    }
   };
 
   const filteredPosts = posts.filter(p => {
@@ -358,21 +346,30 @@ export default function LandingFeedPage() {
               { username: 'natgeo', name: 'National Geographic', avatar: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=150&auto=format&fit=crop&q=80' },
               { username: 'al_vision_lab', name: 'Dr. Alistair Chen', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80' },
               { username: 'elena_lens', name: 'Elena Vance Lens', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80' },
-            ].map(creator => (
-              <div key={creator.username} className="suggested-user-row">
-                <img src={creator.avatar} alt={creator.name} className="suggested-avatar" />
-                <div className="suggested-info">
-                  <span className="suggested-name">{creator.name}</span>
-                  <span className="suggested-handle">@{creator.username}</span>
+            ].map(creator => {
+              const status = getFollowStatus(creator.username);
+              return (
+                <div key={creator.username} className="suggested-user-row">
+                  <img src={creator.avatar} alt={creator.name} className="suggested-avatar" />
+                  <div className="suggested-info">
+                    <span className="suggested-name">{creator.name}</span>
+                    <span className="suggested-handle">@{creator.username}</span>
+                  </div>
+                  <button
+                    className={`btn-suggested-follow ${
+                      status === 'requested'
+                        ? 'btn-requested-pill'
+                        : status === 'following'
+                        ? 'is-following'
+                        : ''
+                    }`}
+                    onClick={() => toggleFollow(creator)}
+                  >
+                    {status === 'requested' ? 'Requested' : status === 'following' ? 'Following' : 'Follow'}
+                  </button>
                 </div>
-                <button
-                  className={`btn-suggested-follow ${isFollowing(creator.username) ? 'is-following' : ''}`}
-                  onClick={() => handleToggleFollow(creator)}
-                >
-                  {isFollowing(creator.username) ? 'Following' : 'Follow'}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

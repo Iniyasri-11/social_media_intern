@@ -21,31 +21,70 @@ export default function EditProfileModal({ onClose }) {
   const [phone, setPhone] = useState(profile.phone || '');
   const [avatar, setAvatar] = useState(profile.avatar);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isProcessingImg, setIsProcessingImg] = useState(false);
 
   const fileInputRef = useRef(null);
 
+  // Convert uploaded image file to high-performance base64 data URL via canvas
   const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAvatar(url);
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessingImg(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize to 280x280 square for avatar storage
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 280;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        setAvatar(dataUrl);
+        setIsProcessingImg(false);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = (e) => {
     e.preventDefault();
+    const cleanUsername = username.trim().toLowerCase() || profile.username;
+    const cleanName = name.trim() || profile.name;
+
     updateProfile({
-      name: name.trim() || profile.name,
-      username: username.trim().toLowerCase() || profile.username,
+      name: cleanName,
+      username: cleanUsername,
       bio: bio.trim(),
       website: website.trim(),
       phone: phone.trim(),
-      avatar,
+      avatar: avatar || profile.avatar,
     });
+
     setSavedSuccess(true);
     setTimeout(() => {
       onClose();
-    }, 400);
+    }, 450);
   };
 
   return (
@@ -75,7 +114,7 @@ export default function EditProfileModal({ onClose }) {
                 type="button"
                 className="btn-avatar-camera"
                 onClick={() => fileInputRef.current?.click()}
-                title="Upload Photo"
+                title="Upload Photo from Device"
               >
                 <Camera size={16} />
               </button>
@@ -90,7 +129,7 @@ export default function EditProfileModal({ onClose }) {
 
             <div className="avatar-action-details">
               <h4>Profile Picture</h4>
-              <p>Upload a custom photo or pick a quick avatar preset</p>
+              <p>{isProcessingImg ? 'Processing image…' : 'Upload a custom photo or choose a preset'}</p>
               <div className="avatar-presets-tray">
                 {PRESET_AVATARS.map((preset, idx) => (
                   <img
@@ -182,7 +221,7 @@ export default function EditProfileModal({ onClose }) {
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn-primary">
+            <button type="submit" className="btn-primary" disabled={isProcessingImg}>
               {savedSuccess ? <><Check size={18} /> Saved!</> : 'Save Profile'}
             </button>
           </div>

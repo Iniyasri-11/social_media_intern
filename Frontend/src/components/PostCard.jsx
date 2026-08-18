@@ -1,17 +1,31 @@
 import { useState } from 'react';
-import { Heart, MessageCircle, Send, Bookmark, ShieldCheck, AlertTriangle, XCircle, MoreHorizontal, Sparkles, Check, Trash2 } from 'lucide-react';
+import {
+  Heart,
+  MessageCircle,
+  Send,
+  Bookmark,
+  ShieldCheck,
+  AlertTriangle,
+  XCircle,
+  MoreHorizontal,
+  Sparkles,
+  Check,
+  Trash2,
+  Clock,
+  PlusSquare,
+} from 'lucide-react';
 import ShareModal from './ShareModal';
 import { useProfile } from '../ProfileContext';
 
 export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
-  const { profile, deleteUserPost } = useProfile();
+  const { profile, deleteUserPost, toggleFollow, getFollowStatus, addMyStory } = useProfile();
   const [likes, setLikes] = useState(post.likes || 124);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
   const [isBookmarked, setIsBookmarked] = useState(post.isBookmarked || false);
-  const [isFollowing, setIsFollowing] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
   const [comments, setComments] = useState(post.commentsList || [
     { id: 1, user: 'david_lens', text: 'Checked the EXIF tags, crystal clear optical glass!' },
     { id: 2, user: 'sarah_ai', text: 'Love the neural transparency feature on Trustgram.' },
@@ -19,6 +33,7 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
   const [newComment, setNewComment] = useState('');
 
   const isOwnPost = post.author?.username === profile.username || post.author?.username === 'you';
+  const followStatus = getFollowStatus(post.author?.username);
 
   const handleToggleLike = () => {
     setIsLiked(prev => !prev);
@@ -45,6 +60,17 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
     }
   };
 
+  const handleAddToStory = () => {
+    addMyStory({
+      media: post.image,
+      caption: post.caption || 'Shared moment 🛡️',
+      verdict: post.verdict || 'Authentic',
+    });
+    setShowMoreMenu(false);
+    setToastMsg('Added to your story!');
+    setTimeout(() => setToastMsg(''), 2500);
+  };
+
   const verdict = post.verdict || (post.confidence_score >= 0.7 ? 'Authentic' : post.confidence_score >= 0.4 ? 'Suspicious' : 'Likely Misinformation');
   const isAuth = verdict.toLowerCase().includes('authentic') || verdict.toLowerCase().includes('true');
   const isSusp = verdict.toLowerCase().includes('suspicious');
@@ -59,15 +85,15 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
           <div className="post-author-group">
             <div className="post-author-avatar-wrap">
               <img
-                src={isOwnPost ? profile.avatar : (post.author.avatar || profile.avatar)}
-                alt={post.author.name}
+                src={isOwnPost ? profile.avatar : (post.author?.avatar || profile.avatar)}
+                alt={post.author?.name || 'author'}
                 className="post-author-avatar"
               />
             </div>
             <div className="post-author-info">
               <div className="author-name-row">
-                <span className="author-name">{isOwnPost ? profile.name : post.author.name}</span>
-                {post.author.verified && (
+                <span className="author-name">{isOwnPost ? profile.name : post.author?.name}</span>
+                {post.author?.verified && (
                   <span className="badge-verified-author" title="Trustgram Verified Creator">
                     <ShieldCheck size={14} />
                   </span>
@@ -75,17 +101,30 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
                 <span className="dot-sep">•</span>
                 <span className="post-time">{post.timeAgo || 'Just now'}</span>
               </div>
-              <span className="author-handle">@{isOwnPost ? profile.username : post.author.username}</span>
+              <span className="author-handle">@{isOwnPost ? profile.username : post.author?.username}</span>
             </div>
           </div>
 
           <div className="post-header-actions">
             {!isOwnPost && (
               <button
-                className={`btn-follow ${isFollowing ? 'following' : ''}`}
-                onClick={() => setIsFollowing(!isFollowing)}
+                className={`btn-follow-toggle ${
+                  followStatus === 'requested'
+                    ? 'btn-requested-pill'
+                    : followStatus === 'following'
+                    ? 'btn-is-following'
+                    : 'btn-follow-action'
+                }`}
+                onClick={() => toggleFollow(post.author)}
+                title={followStatus === 'requested' ? 'Follow Request Sent' : followStatus === 'following' ? 'Following' : 'Follow'}
               >
-                {isFollowing ? 'Following' : 'Follow'}
+                {followStatus === 'requested' ? (
+                  <><Clock size={12} /> Requested</>
+                ) : followStatus === 'following' ? (
+                  'Following'
+                ) : (
+                  'Follow'
+                )}
               </button>
             )}
             
@@ -104,6 +143,9 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
                       <Trash2 size={16} /> Delete Post
                     </button>
                   )}
+                  <button className="dropdown-item" onClick={handleAddToStory}>
+                    <PlusSquare size={16} /> Add to Story
+                  </button>
                   <button className="dropdown-item" onClick={() => { setIsShareModalOpen(true); setShowMoreMenu(false); }}>
                     <Send size={16} /> Share Post
                   </button>
@@ -115,6 +157,13 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
             </div>
           </div>
         </div>
+
+        {/* Temporary action toast */}
+        {toastMsg && (
+          <div className="followers-toast-notice" style={{ margin: '0 1rem 0.5rem' }}>
+            <Check size={14} className="text-green" /> {toastMsg}
+          </div>
+        )}
 
         {/* Media Image with floating Authenticity Tag */}
         <div className="post-media-container">
@@ -182,7 +231,7 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
           </div>
 
           <div className="post-caption-block">
-            <span className="caption-author">@{isOwnPost ? profile.username : post.author.username}</span>
+            <span className="caption-author">@{isOwnPost ? profile.username : post.author?.username}</span>
             <span className="caption-text"> {post.caption}</span>
           </div>
 

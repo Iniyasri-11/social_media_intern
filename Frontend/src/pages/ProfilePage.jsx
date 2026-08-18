@@ -8,6 +8,8 @@ import FollowersModal from '../components/FollowersModal';
 import CreatePostModal from '../components/CreatePostModal';
 import AuditModal from '../components/AuditModal';
 import ShareModal from '../components/ShareModal';
+import CreateHighlightModal from '../components/CreateHighlightModal';
+import HighlightViewerModal from '../components/HighlightViewerModal';
 import {
   Grid,
   Bookmark,
@@ -22,6 +24,7 @@ import {
   Layers,
   Sparkles,
   X,
+  Film,
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -32,7 +35,6 @@ export default function ProfilePage() {
     highlights,
     addUserPost,
     deleteUserPost,
-    addHighlight,
     deleteHighlight,
   } = useProfile();
 
@@ -45,9 +47,10 @@ export default function ProfilePage() {
   const [auditTargetPost, setAuditTargetPost] = useState(null);
   const [shareModalData, setShareModalData] = useState(null); // { title, url, thumbnail } | null
   const [selectedGridPost, setSelectedGridPost] = useState(null);
-  const [isNewHighlightOpen, setIsNewHighlightOpen] = useState(false);
-  const [newHlTitle, setNewHlTitle] = useState('');
-  const [newHlCover, setNewHlCover] = useState('');
+
+  // Story Highlight Modals
+  const [isCreateHighlightOpen, setIsCreateHighlightOpen] = useState(false);
+  const [activeViewerHighlight, setActiveViewerHighlight] = useState(null);
 
   const handleShareProfile = () => {
     setShareModalData({
@@ -57,25 +60,15 @@ export default function ProfilePage() {
     });
   };
 
-  const handleCreateHighlight = (e) => {
-    e.preventDefault();
-    if (!newHlTitle.trim()) return;
-    addHighlight({
-      id: 'hl_' + Date.now(),
-      title: newHlTitle.trim(),
-      cover: newHlCover.trim() || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=150&auto=format&fit=crop&q=80',
-    });
-    setNewHlTitle('');
-    setNewHlCover('');
-    setIsNewHighlightOpen(false);
-  };
-
   const handleDeletePost = (postId) => {
     if (window.confirm('Delete this post permanently from your profile?')) {
       deleteUserPost(postId);
       setSelectedGridPost(null);
     }
   };
+
+  const followersCount = profile.followersCount ?? (profile.followersList?.length || 0);
+  const followingCount = profile.followingCount ?? (profile.followingList?.length || 0);
 
   return (
     <div className="trustgram-layout profile-layout-view">
@@ -131,13 +124,13 @@ export default function ProfilePage() {
                 className="stat-item stat-clickable"
                 onClick={() => setFollowersModalTab('followers')}
               >
-                <strong>{profile.followersCount}</strong> followers
+                <strong>{followersCount}</strong> followers
               </button>
               <button
                 className="stat-item stat-clickable"
                 onClick={() => setFollowersModalTab('following')}
               >
-                <strong>{profile.followingCount}</strong> following
+                <strong>{followingCount}</strong> following
               </button>
             </div>
 
@@ -159,10 +152,15 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* Highlights Bar with Delete & Add Options */}
+        {/* Highlights Bar with Interactive Story Viewer & Add Highlight */}
         <section className="profile-highlights-tray">
           {highlights.map(h => (
-            <div key={h.id} className="highlight-item">
+            <div
+              key={h.id}
+              className="highlight-item"
+              onClick={() => setActiveViewerHighlight(h)}
+              title={`View "${h.title}" story highlight`}
+            >
               <div className="highlight-ring-wrap">
                 <div className="highlight-ring">
                   <img src={h.cover} alt={h.title} className="highlight-avatar" />
@@ -171,7 +169,9 @@ export default function ProfilePage() {
                   className="btn-delete-highlight"
                   onClick={(e) => {
                     e.stopPropagation();
-                    deleteHighlight(h.id);
+                    if (window.confirm(`Delete the "${h.title}" highlight?`)) {
+                      deleteHighlight(h.id);
+                    }
                   }}
                   title="Delete Highlight"
                 >
@@ -182,7 +182,11 @@ export default function ProfilePage() {
             </div>
           ))}
 
-          <div className="highlight-item" onClick={() => setIsNewHighlightOpen(true)}>
+          <div
+            className="highlight-item"
+            onClick={() => setIsCreateHighlightOpen(true)}
+            title="Create new story highlight with videos, reels, or stories"
+          >
             <div className="highlight-ring highlight-add">
               <Plus size={24} className="text-muted" />
             </div>
@@ -395,47 +399,18 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* ── Create New Highlight Modal ── */}
-      {isNewHighlightOpen && (
-        <div className="modal-backdrop" onClick={() => setIsNewHighlightOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Create Story Highlight</h3>
-              <button className="btn-icon-close" onClick={() => setIsNewHighlightOpen(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleCreateHighlight} className="modal-body">
-              <div className="form-group">
-                <label>Highlight Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Travel ✈️ or Studio 📸"
-                  value={newHlTitle}
-                  onChange={e => setNewHlTitle(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Cover Photo URL (optional)</label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={newHlCover}
-                  onChange={e => setNewHlCover(e.target.value)}
-                />
-              </div>
-              <div className="compose-footer">
-                <button type="button" className="btn-secondary" onClick={() => setIsNewHighlightOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary" disabled={!newHlTitle.trim()}>
-                  Add Highlight
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {/* ── Create Story / Reel Highlight Modal ── */}
+      {isCreateHighlightOpen && (
+        <CreateHighlightModal onClose={() => setIsCreateHighlightOpen(false)} />
+      )}
+
+      {/* ── Story Highlight Viewer Modal ── */}
+      {activeViewerHighlight && (
+        <HighlightViewerModal
+          highlight={activeViewerHighlight}
+          onClose={() => setActiveViewerHighlight(null)}
+          onDeleteHighlight={(id) => deleteHighlight(id)}
+        />
       )}
 
       {/* ── Edit Profile Modal ── */}
@@ -443,7 +418,7 @@ export default function ProfilePage() {
         <EditProfileModal onClose={() => setIsEditOpen(false)} />
       )}
 
-      {/* ── Followers Modal ── */}
+      {/* ── Followers / Following / Requested Modal ── */}
       {followersModalTab && (
         <FollowersModal
           initialTab={followersModalTab}
