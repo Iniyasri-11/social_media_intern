@@ -141,15 +141,37 @@ export default function LandingFeedPage() {
   const { profile, addUserPost, toggleFollow, getFollowStatus } = useProfile();
   const navigate = useNavigate();
 
-  const [posts, setPosts] = useState(INITIAL_FEED_POSTS);
+  const [posts, setPosts] = useState(() => {
+    const saved = localStorage.getItem('trustgram_feed_posts');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (_) {}
+    }
+    return INITIAL_FEED_POSTS;
+  });
+
   const [filter, setFilter] = useState('all'); // 'all' | 'authentic' | 'suspicious' | 'trending'
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [auditTargetPost, setAuditTargetPost] = useState(null);
 
   const handlePostCreated = (newPost) => {
-    setPosts(prev => [newPost, ...prev]);
+    setPosts(prev => {
+      const updated = [newPost, ...prev];
+      localStorage.setItem('trustgram_feed_posts', JSON.stringify(updated));
+      return updated;
+    });
     addUserPost(newPost);
+  };
+
+  const handleDeleteFeedPost = (postId) => {
+    setPosts(prev => {
+      const updated = prev.filter(p => p.id !== postId);
+      localStorage.setItem('trustgram_feed_posts', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const filteredPosts = posts.filter(p => {
@@ -272,7 +294,7 @@ export default function LandingFeedPage() {
                 post={post}
                 user={profile}
                 onAuditClick={setAuditTargetPost}
-                onDeletePost={(postId) => setPosts(prev => prev.filter(p => p.id !== postId))}
+                onDeletePost={handleDeleteFeedPost}
               />
             ))
           ) : (

@@ -53,10 +53,15 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
   };
 
   const handleDelete = (e) => {
-    e?.stopPropagation();
-    deleteUserPost(post.id);
-    if (onDeletePost) onDeletePost(post.id);
-    setShowMoreMenu(false);
+    if (e) e.stopPropagation();
+    const promptText = isOwnPost
+      ? 'Delete this post permanently from Trustgram?'
+      : 'Remove this post from your feed?';
+    if (window.confirm(promptText)) {
+      deleteUserPost(post.id);
+      if (onDeletePost) onDeletePost(post.id);
+      setShowMoreMenu(false);
+    }
   };
 
   const handleAddToStory = () => {
@@ -131,26 +136,31 @@ export default function PostCard({ post, user, onAuditClick, onDeletePost }) {
               <button
                 className="btn-post-more"
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                title="Post options"
               >
                 <MoreHorizontal size={18} />
               </button>
               
               {showMoreMenu && (
-                <div className="post-options-dropdown">
-                  <button className="dropdown-item item-delete" onClick={handleDelete}>
-                    <Trash2 size={16} /> Delete Post
-                  </button>
-                  <button className="dropdown-item" onClick={handleAddToStory}>
-                    <PlusSquare size={16} /> Add to Story
-                  </button>
-                  <button className="dropdown-item" onClick={() => { setIsShareModalOpen(true); setShowMoreMenu(false); }}>
-                    <Send size={16} /> Share Post
-                  </button>
-                  <button className="dropdown-item" onClick={() => { onAuditClick(post); setShowMoreMenu(false); }}>
-                    <ShieldCheck size={16} /> View Trust Audit
-                  </button>
-                </div>
+                <>
+                  <div
+                    style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                    onClick={() => setShowMoreMenu(false)}
+                  />
+                  <div className="post-options-dropdown" onClick={e => e.stopPropagation()}>
+                    <button className="dropdown-item item-delete" onClick={handleDelete}>
+                      <Trash2 size={16} /> {isOwnPost ? 'Delete Post' : 'Remove from Feed'}
+                    </button>
+                    <button className="dropdown-item" onClick={handleAddToStory}>
+                      <PlusSquare size={16} /> Add to Story
+                    </button>
+                    <button className="dropdown-item" onClick={() => { setIsShareModalOpen(true); setShowMoreMenu(false); }}>
+                      <Send size={16} /> Share Post
+                    </button>
+                    <button className="dropdown-item" onClick={() => { onAuditClick(post); setShowMoreMenu(false); }}>
+                      <ShieldCheck size={16} /> View Trust Audit
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           </div>

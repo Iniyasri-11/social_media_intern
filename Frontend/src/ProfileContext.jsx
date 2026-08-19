@@ -378,10 +378,9 @@ export function ProfileProvider({ children }) {
   const deleteUserPost = (postId) => {
     setUserPosts(prev => {
       const updated = prev.filter(p => p.id !== postId);
-      try {
-        const key = getStorageKey('trustgram_user_posts', profile.username);
-        localStorage.setItem(key, JSON.stringify(updated));
-      } catch (_) {}
+      const key = getStorageKey('trustgram_user_posts', profile.username);
+      localStorage.setItem(key, JSON.stringify(updated));
+      localStorage.setItem('trustgram_user_posts', JSON.stringify(updated));
       return updated;
     });
   };
@@ -389,10 +388,9 @@ export function ProfileProvider({ children }) {
   const addHighlight = (newHl) => {
     setHighlights(prev => {
       const updated = [...prev, newHl];
-      try {
-        const key = getStorageKey('trustgram_highlights', profile.username);
-        localStorage.setItem(key, JSON.stringify(updated));
-      } catch (_) {}
+      const key = getStorageKey('trustgram_highlights', profile.username);
+      localStorage.setItem(key, JSON.stringify(updated));
+      localStorage.setItem('trustgram_highlights', JSON.stringify(updated));
       return updated;
     });
   };
@@ -400,24 +398,44 @@ export function ProfileProvider({ children }) {
   const deleteHighlight = (hlId) => {
     setHighlights(prev => {
       const updated = prev.filter(h => h.id !== hlId);
-      try {
-        const key = getStorageKey('trustgram_highlights', profile.username);
-        localStorage.setItem(key, JSON.stringify(updated));
-      } catch (_) {}
+      const key = getStorageKey('trustgram_highlights', profile.username);
+      localStorage.setItem(key, JSON.stringify(updated));
+      localStorage.setItem('trustgram_highlights', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const deleteHighlightItem = (highlightId, itemId) => {
+    setHighlights(prev => {
+      const updated = prev.map(hl => {
+        if (hl.id === highlightId) {
+          const filteredItems = (hl.items || []).filter(item => item.id !== itemId);
+          return { ...hl, items: filteredItems };
+        }
+        return hl;
+      }).filter(hl => (hl.items || []).length > 0); // remove highlight if empty
+      const key = getStorageKey('trustgram_highlights', profile.username);
+      localStorage.setItem(key, JSON.stringify(updated));
+      localStorage.setItem('trustgram_highlights', JSON.stringify(updated));
       return updated;
     });
   };
 
   const addStoryToHighlight = (highlightId, item) => {
-    setHighlights(prev => prev.map(hl => {
-      if (hl.id === highlightId) {
-        return {
-          ...hl,
-          items: [...(hl.items || []), item],
-        };
-      }
-      return hl;
-    }));
+    setHighlights(prev => {
+      const updated = prev.map(hl => {
+        if (hl.id === highlightId) {
+          return {
+            ...hl,
+            items: [...(hl.items || []), item],
+          };
+        }
+        return hl;
+      });
+      const key = getStorageKey('trustgram_highlights', profile.username);
+      localStorage.setItem(key, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const addMyStory = (story) => {
@@ -463,6 +481,7 @@ export function ProfileProvider({ children }) {
         deleteUserPost,
         addHighlight,
         deleteHighlight,
+        deleteHighlightItem,
         addStoryToHighlight,
         addMyStory,
         deleteMyStory,

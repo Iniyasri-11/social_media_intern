@@ -61,8 +61,10 @@ export default function ProfilePage() {
   };
 
   const handleDeletePost = (postId) => {
-    deleteUserPost(postId);
-    setSelectedGridPost(null);
+    if (window.confirm('Delete this post permanently from your profile?')) {
+      deleteUserPost(postId);
+      setSelectedGridPost(null);
+    }
   };
 
   const followersCount = profile.followersCount ?? (profile.followersList?.length || 0);
@@ -164,12 +166,12 @@ export default function ProfilePage() {
                   <img src={h.cover} alt={h.title} className="highlight-avatar" />
                 </div>
                 <button
-                  type="button"
                   className="btn-delete-highlight"
                   onClick={(e) => {
-                    e.preventDefault();
                     e.stopPropagation();
-                    deleteHighlight(h.id);
+                    if (window.confirm(`Delete the "${h.title}" highlight?`)) {
+                      deleteHighlight(h.id);
+                    }
                   }}
                   title="Delete Highlight"
                 >

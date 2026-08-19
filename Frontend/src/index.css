@@ -651,20 +651,16 @@ code { font-family: 'JetBrains Mono', monospace; }
 .btn-follow:hover { background: var(--surface-hover); }
 .btn-follow.following { background: var(--bg-subtle); color: var(--text-muted); }
 
-.more-menu-container {
-  position: relative;
-}
-
 .btn-post-more {
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
-  padding: 6px;
-  border-radius: 50%;
+  padding: 4px;
   display: grid;
   place-items: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  border-radius: 50%;
+  transition: all 0.15s ease;
 }
 
 .btn-post-more:hover {
@@ -672,20 +668,26 @@ code { font-family: 'JetBrains Mono', monospace; }
   color: var(--text);
 }
 
+.more-menu-container {
+  position: relative;
+}
+
 .post-options-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   right: 0;
-  min-width: 170px;
-  background: var(--surface);
+  background: var(--surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-strong);
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  min-width: 180px;
   padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  z-index: 100;
+  z-index: 999;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   animation: fadeInToast 0.15s ease;
 }
 
@@ -694,16 +696,16 @@ code { font-family: 'JetBrains Mono', monospace; }
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  border-radius: 8px;
-  color: var(--text);
+  padding: 0.6rem 0.85rem;
   font-size: 0.82rem;
   font-weight: 600;
-  text-align: left;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.12s ease;
+  text-align: left;
+  transition: background 0.15s ease;
 }
 
 .dropdown-item:hover {
@@ -1101,29 +1103,12 @@ code { font-family: 'JetBrains Mono', monospace; }
   align-items: center;
   gap: 0.35rem;
   cursor: pointer;
-  position: relative;
 }
 
 .highlight-ring-wrap {
   position: relative;
-  display: inline-block;
-}
-
-.highlight-ring {
   width: 68px;
   height: 68px;
-  border-radius: 50%;
-  padding: 3px;
-  border: 1px solid var(--border-strong);
-  display: grid;
-  place-items: center;
-  background: var(--surface);
-  transition: transform 0.18s ease, border-color 0.18s ease;
-}
-
-.highlight-item:hover .highlight-ring {
-  border-color: var(--accent-indigo);
-  transform: scale(1.04);
 }
 
 .btn-delete-highlight {
@@ -1140,13 +1125,25 @@ code { font-family: 'JetBrains Mono', monospace; }
   place-items: center;
   cursor: pointer;
   z-index: 10;
-  transition: transform 0.15s ease, background 0.15s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  opacity: 0.85;
+  transition: all 0.15s ease;
 }
 
 .btn-delete-highlight:hover {
-  transform: scale(1.2);
+  opacity: 1;
+  transform: scale(1.15);
   background: #dc2626;
+}
+
+.highlight-ring {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  padding: 3px;
+  border: 1px solid var(--border-strong);
+  display: grid;
+  place-items: center;
+  background: var(--surface);
 }
 
 .highlight-avatar {
