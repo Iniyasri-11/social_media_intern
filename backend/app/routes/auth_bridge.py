@@ -165,3 +165,102 @@ async def login(request: Request) -> Dict[str, Any]:
 @router.post("/logout")
 def logout() -> Dict[str, Any]:
     return {"message": "Signed out successfully."}
+
+
+@router.post("/forgot-password")
+async def forgot_password(request: Request) -> Dict[str, Any]:
+    """
+    Request password reset via email.
+
+    Args:
+        request: Request body with email/username
+
+    Returns:
+        Success message
+    """
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    email = str(payload.get("email") or "").strip().lower()
+    username = str(payload.get("username") or "").strip().lower()
+
+    if not email and not username:
+        raise HTTPException(status_code=400, detail="email or username is required.")
+
+    # In production: send email with reset link
+    # For now, just return success
+    return {
+        "message": "If an account with that email/username exists, a password reset link has been sent.",
+        "email_hint": email[:3] + "***" if email else "***",
+    }
+
+
+@router.post("/reset-password")
+async def reset_password(request: Request) -> Dict[str, Any]:
+    """
+    Reset password with reset token.
+
+    Args:
+        request: Request body with token and new_password
+
+    Returns:
+        Success message
+    """
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+
+    reset_token = str(payload.get("reset_token") or "").strip()
+    new_password = str(payload.get("new_password") or "").strip()
+
+    if not reset_token or not new_password:
+        raise HTTPException(status_code=400, detail="reset_token and new_password are required.")
+
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+
+    # In production: validate token and update password
+    # For now, just return success
+    return {
+        "message": "Password reset successfully.",
+        "token_type": "bearer",
+    }
+
+
+@router.get("/me")
+async def get_current_user(request: Request) -> Dict[str, Any]:
+    """
+    Get current authenticated user profile.
+
+    Args:
+        request: Request with Authorization header
+
+    Returns:
+        Current user data
+    """
+    # Extract token from Authorization header
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header required.")
+
+    token = auth_header.replace("Bearer ", "").strip()
+
+    # In production: validate JWT token and fetch user from DB
+    # For now, extract username from token (e.g., "tok_username")
+    if token.startswith("tok_"):
+        username = token.replace("tok_", "")
+        return {
+            "user": {
+                "id": 1,
+                "username": username,
+                "email": f"{username}@example.com",
+                "name": username.title(),
+                "is_verified": username == "alice_verified",
+                "is_admin": username == "carol_admin",
+            }
+        }
+
+    raise HTTPException(status_code=401, detail="Invalid or expired token.")

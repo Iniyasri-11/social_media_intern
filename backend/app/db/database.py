@@ -32,6 +32,60 @@ def init_db():
     Base.metadata.create_all(bind=engine)
 
 
+def seed_db():
+    """Seed the database with sample data on first run."""
+    from app.db.models import User, Post
+    from sqlalchemy.orm import Session
+    import hashlib
+
+    db = SessionLocal()
+    try:
+        # Check if data already seeded
+        user_count = db.query(User).count()
+        if user_count > 0:
+            return  # Already seeded
+
+        # Create sample users
+        sample_users = [
+            User(
+                username="alice_verified",
+                email="alice@example.com",
+                password_hash=hashlib.sha256("password123".encode()).hexdigest(),
+                name="Alice Verified",
+                bio="Data journalist and fact-checker",
+                avatar="https://api.example.com/avatar/alice",
+                is_verified=True,
+                website="https://alice.example.com",
+            ),
+            User(
+                username="bob_explorer",
+                email="bob@example.com",
+                password_hash=hashlib.sha256("password123".encode()).hexdigest(),
+                name="Bob Explorer",
+                bio="Technology enthusiast",
+                avatar="https://api.example.com/avatar/bob",
+            ),
+            User(
+                username="carol_admin",
+                email="carol@example.com",
+                password_hash=hashlib.sha256("admin123".encode()).hexdigest(),
+                name="Carol Admin",
+                bio="Platform moderator",
+                is_admin=True,
+                is_verified=True,
+            ),
+        ]
+        
+        db.add_all(sample_users)
+        db.commit()
+
+    except Exception as e:
+        print(f"Seeding error: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 def get_db():
     """Dependency generator for providing a transactional database session."""
     db = SessionLocal()

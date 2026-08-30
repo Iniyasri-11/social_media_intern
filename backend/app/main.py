@@ -26,6 +26,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.auth_bridge import router as auth_bridge_router
 from app.routes.verify import router as verify_router
 from app.routes.verify_api import router as verify_api_router
+from app.routes.posts_api import router as posts_api_router
+from app.routes.social_api import router as social_api_router
+from app.routes.admin_api import router as admin_api_router
+from app.db.database import init_db, seed_db
 
 # ---------------------------------------------------------------------------
 # Project metadata
@@ -70,6 +74,19 @@ app.add_middleware(
 app.include_router(verify_router)
 app.include_router(auth_bridge_router)
 app.include_router(verify_api_router)
+app.include_router(posts_api_router)
+app.include_router(social_api_router)
+app.include_router(admin_api_router)
+
+
+# ---------------------------------------------------------------------------
+# Startup events
+# ---------------------------------------------------------------------------
+@app.on_event("startup")
+def startup_event():
+    """Initialize database on application startup."""
+    init_db()
+    seed_db()
 
 
 # ---------------------------------------------------------------------------

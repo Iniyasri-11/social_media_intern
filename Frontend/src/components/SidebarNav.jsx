@@ -28,7 +28,25 @@ export default function SidebarNav({ onCreateClick, onMessagesClick, onNotificat
   const currentPath = location.pathname;
 
   return (
-    <aside className="trustgram-sidebar">
+    <>
+      <header className="mobile-shell-header">
+        <button className="mobile-shell-brand" onClick={() => navigate('/')} aria-label="Go to Trustgram home">
+          <div className="brand-shield-logo">
+            <ShieldCheck size={20} className="text-white" />
+          </div>
+          <span>Trustgram</span>
+        </button>
+        <div className="mobile-shell-actions">
+          <button className="btn-icon-round" onClick={toggleTheme} title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}>
+            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+          <button className="btn-icon-round" onClick={onCreateClick || (() => navigate('/verify'))} title="Create or verify a post">
+            <PlusSquare size={17} />
+          </button>
+        </div>
+      </header>
+
+      <aside className="trustgram-sidebar">
       {/* Brand Logo */}
       <div className="sidebar-brand" onClick={() => navigate('/')}>
         <div className="brand-shield-logo">
@@ -144,6 +162,7 @@ export default function SidebarNav({ onCreateClick, onMessagesClick, onNotificat
           </div>
         )}
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
