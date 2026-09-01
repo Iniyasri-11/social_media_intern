@@ -17,20 +17,23 @@ export default function App() {
         <ProfileProvider>
           <BrowserRouter>
             <Routes>
-              {/* Instagram-Style Home Feed */}
+              {/* Home Verified Feed */}
               <Route path="/" element={<LandingFeedPage />} />
               <Route path="/feed" element={<LandingFeedPage />} />
 
-              {/* Instagram Explore Grid */}
+              {/* Explore Grid */}
               <Route path="/explore" element={<ExplorePage />} />
 
-              {/* Instagram Reels Experience */}
+              {/* Reels Experience */}
               <Route path="/reels" element={<ReelsPage />} />
 
-              {/* Instagram User Profile Management */}
+              {/* User Profile (Self and Other Users) */}
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/:username" element={<ProfilePage />} />
+              <Route path="/user/:username" element={<ProfilePage />} />
+              <Route path="/u/:username" element={<ProfilePage />} />
 
-              {/* Neural Authenticity Verification Lab */}
+              {/* AI Verification Scanner */}
               <Route path="/verify" element={<PostCheckPage />} />
               <Route path="/post" element={<PostCheckPage />} />
 
