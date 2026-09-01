@@ -66,3 +66,4 @@ tests/
 - [ ] Real text authenticity model (next phase)
 - [ ] Image metadata + reverse image search (next phase)
 - [ ] Real weighted scoring logic in `scoring/` (next phase)
+- Backend foundation documentation updated
